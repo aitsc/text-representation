@@ -19,4 +19,5 @@
 *.tmp*
 checkpoint
 *.DS_Store
+._*
 

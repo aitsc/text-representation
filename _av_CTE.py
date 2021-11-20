@@ -14,11 +14,11 @@ import math
 import importlib
 from pprint import pformat, pprint
 import logging
+
 logging.basicConfig(level=logging.ERROR)  # 阻止输出初始化句子过长的警告
 句子清洗 = importlib.import_module('_au_text preprocessing').句子清洗
-IR评估 = importlib.import_module('_ad_evaluate').IR评估
-TC评估 = importlib.import_module('_ad_evaluate').TC评估
-DeepMethods = importlib.import_module('_bc_deep methods').DeepMethods
+from _ad_evaluate import IR评估, TC评估
+from _bc_deep_methods import DeepMethods
 
 
 class 参数文件:
@@ -78,16 +78,16 @@ class 耦合嵌入_tf模型:
         print(self.__class__.__name__ + '.' + sys._getframe().f_code.co_name + '...', end='')
         sys.stdout.flush()
         startTime = time.time()
-        with open((模型地址+'.parms').encode('utf-8'), 'r', encoding='utf-8') as r:
+        with open((模型地址 + '.parms').encode('utf-8'), 'r', encoding='utf-8') as r:
             模型参数d = eval(r.read())
         tf_config = tf.ConfigProto()
         tf_config.gpu_options.per_process_gpu_memory_fraction = 模型参数d['显存占用比']
         tf_config.gpu_options.allow_growth = True  # GPU按需分配
         sess = tf.Session(config=tf_config)
-        saver = tf.train.import_meta_graph(模型地址+'.meta')
+        saver = tf.train.import_meta_graph(模型地址 + '.meta')
         saver.restore(sess, 模型地址)
         # 读取词表
-        with open((模型地址+'.w_num_map').encode('utf-8'), 'rb') as r:
+        with open((模型地址 + '.w_num_map').encode('utf-8'), 'rb') as r:
             词_序号d = pickle.load(r)
         print('%.2fm' % ((time.time() - startTime) / 60))
         pprint(模型参数d)
@@ -99,12 +99,12 @@ class 耦合嵌入_tf模型:
         :param 初始词向量l: None or [[词,[向量]],..] 为空则随机初始化词向量
         :return: tf.Graph, tf.global_variables_initializer, {词:对应序号,..}
         '''
-        print(self.__class__.__name__ + '.' + sys._getframe().f_code.co_name + '...',end='')
+        print(self.__class__.__name__ + '.' + sys._getframe().f_code.co_name + '...', end='')
         sys.stdout.flush()
-        startTime=time.time()
-        词_序号d={'':0}
-        序号_词d={0:''}
-        词向量矩阵l=[[0.]*模型参数d['embedding_dim']]
+        startTime = time.time()
+        词_序号d = {'': 0}
+        序号_词d = {0: ''}
+        词向量矩阵l = [[0.] * 模型参数d['embedding_dim']]
         graph = tf.Graph()
         with graph.as_default():
             if 模型参数d['使用词向量']:
@@ -115,7 +115,7 @@ class 耦合嵌入_tf模型:
                 if not 初始词向量l:
                     初始词向量l = []
                 if len(初始词向量l) > 词数上限:
-                    词数上限 = len(初始词向量l) + 1 # 从1开始, 0是填充向量
+                    词数上限 = len(初始词向量l) + 1  # 从1开始, 0是填充向量
                 for i, (词, 向量) in enumerate(初始词向量l):
                     i += 1  # 从1开始, 0是填充
                     词_序号d[词] = i
@@ -123,7 +123,7 @@ class 耦合嵌入_tf模型:
                     词向量矩阵l.append(向量)
                 for i in range(len(词向量矩阵l), 词数上限):
                     if 模型参数d['词向量固定值初始化'] and -1 <= 模型参数d['词向量固定值初始化'] <= 1:
-                        词向量矩阵l.append([模型参数d['词向量固定值初始化']]*模型参数d['embedding_dim'])
+                        词向量矩阵l.append([模型参数d['词向量固定值初始化']] * 模型参数d['embedding_dim'])
                     else:
                         词向量矩阵l.append([random.uniform(-1, 1) for i in range(模型参数d['embedding_dim'])])
                 if 模型参数d['固定词向量']:
@@ -152,9 +152,11 @@ class 耦合嵌入_tf模型:
             else:
                 # 正例-负例 变量
                 title_p = tf.placeholder(tf.float32, [None, 模型参数d['title_maxlen'], 模型参数d['句矩阵词dim']], name='title_p')
-                abstract_p = tf.placeholder(tf.float32, [None, 模型参数d['abstract_maxlen'], 模型参数d['句矩阵词dim']], name='abstract_p')
+                abstract_p = tf.placeholder(tf.float32, [None, 模型参数d['abstract_maxlen'], 模型参数d['句矩阵词dim']],
+                                            name='abstract_p')
                 title_n = tf.placeholder(tf.float32, [None, 模型参数d['title_maxlen'], 模型参数d['句矩阵词dim']], name='title_n')
-                abstract_n = tf.placeholder(tf.float32, [None, 模型参数d['abstract_maxlen'], 模型参数d['句矩阵词dim']], name='abstract_n')
+                abstract_n = tf.placeholder(tf.float32, [None, 模型参数d['abstract_maxlen'], 模型参数d['句矩阵词dim']],
+                                            name='abstract_n')
                 title_p_n = tf.concat([title_p, title_n], 0)
                 abstract_p_n = tf.concat([abstract_p, abstract_n], 0)
 
@@ -180,7 +182,8 @@ class 耦合嵌入_tf模型:
             # 使用模型
             isTrain = tf.placeholder(tf.bool, name='isTrain')
             if 模型参数d['LSTM_CNN']['enable']:
-                outputs_t, outputs_a = self._m_LSTM_CNN(模型参数d['LSTM_CNN'], title_p_n, abstract_p_n, title_len, abstract_len, isTrain)
+                outputs_t, outputs_a = self._m_LSTM_CNN(模型参数d['LSTM_CNN'], title_p_n, abstract_p_n, title_len,
+                                                        abstract_len, isTrain)
             else:
                 print('至少有一个模型!')
                 raise 1
@@ -196,7 +199,7 @@ class 耦合嵌入_tf模型:
                 # 余弦距离, 变这个需要变 标题摘要相似度计算
                 outputs_t = tf.nn.l2_normalize(outputs_t, 1, name='title_l2vec')
                 outputs_a = tf.nn.l2_normalize(outputs_a, 1, name='abstract_l2vec')
-                sim_p_n = tf.reduce_sum(tf.multiply(outputs_t, outputs_a), 1,name='sim_p_n')
+                sim_p_n = tf.reduce_sum(tf.multiply(outputs_t, outputs_a), 1, name='sim_p_n')
 
             # 相似度相关参数
             with tf.variable_scope('sim_result'):
@@ -240,7 +243,7 @@ class 耦合嵌入_tf模型:
             if 0 < 模型参数d['AdamOptimizer'] < 1:
                 optimizer = tf.train.AdamOptimizer(learning_rate=模型参数d['AdamOptimizer'])
             else:
-                学习率最小值 = 模型参数d['learning_rate']/模型参数d['学习率最小值倍数']
+                学习率最小值 = 模型参数d['learning_rate'] / 模型参数d['学习率最小值倍数']
                 learning_rate = tf.maximum(学习率最小值, tf.train.exponential_decay(
                     learning_rate=模型参数d['learning_rate'],
                     global_step=global_step,
@@ -267,7 +270,7 @@ class 耦合嵌入_tf模型:
             # tensor_name_list = [tensor.name for tensor in tf.get_default_graph().as_graph_def().node]
             # for tensor_name in tensor_name_list: print(tensor_name)
 
-        print('%.2fm'%((time.time()-startTime)/60))
+        print('%.2fm' % ((time.time() - startTime) / 60))
         return graph, init, 词_序号d
 
     def _m_LSTM_CNN(self, 模型参数d, title_p_n, abstract_p_n, title_len, abstract_len, isTrain):
@@ -285,27 +288,29 @@ class 耦合嵌入_tf模型:
             outputs = x
             biLSTM池化方法 = eval(模型参数d['biLSTM池化方法'])
             输出 = {}
-            for i,隐层数 in enumerate(各隐藏层数l):
+            for i, 隐层数 in enumerate(各隐藏层数l):
                 input_keep_prob = keep_prob
                 output_keep_prob = keep_prob
-                if i>0:
+                if i > 0:
                     input_keep_prob = 1
-                with tf.variable_scope("biLSTM%dl"%i):
+                with tf.variable_scope("biLSTM%dl" % i):
                     lstm_fw_cell = tf.nn.rnn_cell.LSTMCell(隐层数, forget_bias=1.0)
                     lstm_bw_cell = tf.nn.rnn_cell.LSTMCell(隐层数, forget_bias=1.0)
-                    输出['lstm_fw_cell%dL'%(i+1)] = lstm_fw_cell
-                    输出['lstm_bw_cell%dL'%(i+1)] = lstm_bw_cell
+                    输出['lstm_fw_cell%dL' % (i + 1)] = lstm_fw_cell
+                    输出['lstm_bw_cell%dL' % (i + 1)] = lstm_bw_cell
                     lstm_fw_cell = tf.nn.rnn_cell.DropoutWrapper(
                         lstm_fw_cell,
-                        input_keep_prob = input_keep_prob,
-                        output_keep_prob = output_keep_prob,
+                        input_keep_prob=input_keep_prob,
+                        output_keep_prob=output_keep_prob,
                     )
                     lstm_bw_cell = tf.nn.rnn_cell.DropoutWrapper(
                         lstm_bw_cell,
-                        input_keep_prob = input_keep_prob,
-                        output_keep_prob = output_keep_prob,
+                        input_keep_prob=input_keep_prob,
+                        output_keep_prob=output_keep_prob,
                     )
-                    outputs, output_states_fw, _ = rnn.stack_bidirectional_dynamic_rnn([lstm_fw_cell], [lstm_bw_cell], outputs,dtype=tf.float32,sequence_length=sequence_length)
+                    outputs, output_states_fw, _ = rnn.stack_bidirectional_dynamic_rnn([lstm_fw_cell], [lstm_bw_cell],
+                                                                                       outputs, dtype=tf.float32,
+                                                                                       sequence_length=sequence_length)
                     前向隐层 = output_states_fw[-1][-1]
                     反向隐层 = tf.split(tf.squeeze(outputs[:, :1, :], [1]), 2, 1)[1]
                     # 每个状态使用 pooling
@@ -317,18 +322,18 @@ class 耦合嵌入_tf模型:
                         # 输出使用 pooling
                         f = eval(模型参数d['LSTM序列池化方法'])
                         if f:
-                            if f == tf.reduce_mean: # padding 输出保证是0
+                            if f == tf.reduce_mean:  # padding 输出保证是0
                                 outputs = tf.reduce_sum(outputs, 1) / sequence_length
                             elif f == tf.reduce_max:
                                 outputs = f(outputs, 1)
                             else:
-                                assert False,'不支持其他池化方式!'
-                        else: # 输出最后一个状态
+                                assert False, '不支持其他池化方式!'
+                        else:  # 输出最后一个状态
                             if biLSTM池化方法 != tf.concat:
                                 outputs = biLSTM池化方法([前向隐层, 反向隐层], 0)
                             else:
                                 outputs = tf.concat([前向隐层, 反向隐层], 1)
-                        输出['outputs']=outputs
+                        输出['outputs'] = outputs
             if 可视化:
                 for name, cell in 输出.items():
                     if 'cell' not in name: continue
@@ -336,7 +341,7 @@ class 耦合嵌入_tf模型:
                     tf.summary.histogram(name + '-b', cell.weights[1])
             return 输出
 
-        def CNN2d( x, 模型参数d, keep_prob=1., 可视化=True):
+        def CNN2d(x, 模型参数d, keep_prob=1., 可视化=True):
             '''
             描述: conv2d + relu + max_pool + concat
             :param x: [batch_size, sequence_length, embedding_dim]
@@ -356,12 +361,14 @@ class 耦合嵌入_tf模型:
                 for filter_size in filter_sizes:
                     filter_shape = [filter_size, embedding_dim, 1, num_filters]
                     # 权重
-                    w = tf.get_variable(initializer=tf.truncated_normal(filter_shape, stddev=0.1), name='CNN_cell%dfs_b'%filter_size)
-                    b = tf.get_variable(initializer=tf.constant(0.1, shape=[num_filters]), name='CNN_cell%dfs_w'%filter_size)
-                    输出['CNN_cell%dfs_w'%filter_size] = w
-                    输出['CNN_cell%dfs_b'%filter_size] = b
+                    w = tf.get_variable(initializer=tf.truncated_normal(filter_shape, stddev=0.1),
+                                        name='CNN_cell%dfs_b' % filter_size)
+                    b = tf.get_variable(initializer=tf.constant(0.1, shape=[num_filters]),
+                                        name='CNN_cell%dfs_w' % filter_size)
+                    输出['CNN_cell%dfs_w' % filter_size] = w
+                    输出['CNN_cell%dfs_b' % filter_size] = b
                     # 卷积
-                    conv = tf.nn.conv2d(x, w, strides=[1]*4, padding='VALID')
+                    conv = tf.nn.conv2d(x, w, strides=[1] * 4, padding='VALID')
                     h = tf.nn.relu(tf.nn.bias_add(conv, b))
                     max_pool = tf.nn.max_pool(h, ksize=[1, h.shape[1], 1, 1], strides=[1] * 4, padding='VALID')
                     if 模型参数d['CNN输出层tanh']:
@@ -406,10 +413,10 @@ class 耦合嵌入_tf模型:
         return outputs_t, outputs_a
 
     def _词向量微调层(self, 句子词张量):
-        with tf.variable_scope("fine_tune_embedding",reuse=tf.AUTO_REUSE):
+        with tf.variable_scope("fine_tune_embedding", reuse=tf.AUTO_REUSE):
             embedding_dim = int(句子词张量.shape[-1])
-            weights = tf.get_variable('weights',initializer=tf.random_normal([embedding_dim, embedding_dim]))
-            biases = tf.get_variable('biases',initializer=tf.random_normal([embedding_dim]))
+            weights = tf.get_variable('weights', initializer=tf.random_normal([embedding_dim, embedding_dim]))
+            biases = tf.get_variable('biases', initializer=tf.random_normal([embedding_dim]))
             outputs = tf.einsum('ijk,kl->ijl', 句子词张量, weights) + biases
             outputs = tf.tanh(outputs)
             输出 = {}
@@ -427,7 +434,7 @@ class 耦合嵌入_tf模型:
         :return: [[词序号,..],..], [长度1,..], ..
         '''
         assert self._模型参数d['haveTrainingSteps'] >= 0, '还未初始化模型!'
-        assert not isinstance(句_词变矩阵l[0][0], list), '数据格式错误!(句_词变矩阵l[0][0]=%s)'%str(句_词变矩阵l[0][0])
+        assert not isinstance(句_词变矩阵l[0][0], list), '数据格式错误!(句_词变矩阵l[0][0]=%s)' % str(句_词变矩阵l[0][0])
         新词数, 新词s, 加入新词s = 0, set(), set()
         最大长度 = self._模型参数d['title_maxlen'] if isTitle else self._模型参数d['abstract_maxlen']
         长度l = []
@@ -438,11 +445,11 @@ class 耦合嵌入_tf模型:
                 句_词矩阵l.append(句子[:最大长度])
                 长度l.append(len(句_词矩阵l[-1]))
         else:
-            句_词矩阵l = [[0]*最大长度 for i in range(len(句_词变矩阵l))]
-            词数上限=self._sess.run(self._sess.graph.get_tensor_by_name('word_count_limit:0'))
-            for i,句子 in enumerate(句_词变矩阵l):
+            句_词矩阵l = [[0] * 最大长度 for i in range(len(句_词变矩阵l))]
+            词数上限 = self._sess.run(self._sess.graph.get_tensor_by_name('word_count_limit:0'))
+            for i, 句子 in enumerate(句_词变矩阵l):
                 长度 = 0
-                for j,词 in enumerate(句子):
+                for j, 词 in enumerate(句子):
                     if j >= 最大长度:
                         break
                     if 词 in self._词_序号d:
@@ -453,7 +460,7 @@ class 耦合嵌入_tf模型:
                         新词s.add(词)
                         if 词数上限 > len(self._词_序号d) and 加入新词 and self._模型参数d['可加入新词']:
                             加入新词s.add(词)
-                            序号 = len(self._词_序号d) + 1 # 0号是填充
+                            序号 = len(self._词_序号d) + 1  # 0号是填充
                             self._词_序号d[词] = 序号
                             句_词矩阵l[i][长度] = 序号
                             长度 += 1
@@ -481,8 +488,8 @@ class 耦合嵌入_tf模型:
         return 多_句_词矩阵l, 多_长度l, all新词数, all新词s, all加入新词s
 
     def train(self, title_p, abstract_p, title_n, abstract_n,
-           title_len_p, abstract_len_p, title_len_n, abstract_len_n,
-           记录过程=True, 记录元数据=False, 合并之前训练错误的数据=None):
+              title_len_p, abstract_len_p, title_len_n, abstract_len_n,
+              记录过程=True, 记录元数据=False, 合并之前训练错误的数据=None):
         '''
         [title_p, abstract_p], [title_n, abstract_n] 每行要含有相同的标题或摘要, 才能并行训练, 和损失函数有关
         如果不使用词向量, 词序号必须是词向量!
@@ -500,8 +507,8 @@ class 耦合嵌入_tf模型:
         :return: ,.. 训练错误的数据:[...]包含和训练集一样的8个元素
         '''
         assert self._模型参数d['haveTrainingSteps'] >= 0, '还未初始化模型!'
-        assert not isinstance(title_p[0][0],list),'数据格式错误!(title_p[0][0])'
-        assert len(title_p)==len(title_len_p),'数据格式错误!(len(title_p)==len(title_len_p))'
+        assert not isinstance(title_p[0][0], list), '数据格式错误!(title_p[0][0])'
+        assert len(title_p) == len(title_len_p), '数据格式错误!(len(title_p)==len(title_len_p))'
 
         if 合并之前训练错误的数据:
             title_p += 合并之前训练错误的数据[0]
@@ -528,11 +535,11 @@ class 耦合嵌入_tf模型:
         self._模型参数d['haveTrainingSteps'] += 1
         # 操作
         训练op = {}
-        训练op['loss']=self._sess.graph.get_tensor_by_name('loss_f/loss_op:0')
-        训练op['对错二分']=self._sess.graph.get_tensor_by_name('acc_f/right_error_list:0')
-        训练op['acc']=self._sess.graph.get_tensor_by_name('acc_f/accuracy_op:0')
-        训练op['train']=self._sess.graph.get_operation_by_name('train_op')
-        训练op['loss对错二分']=self._sess.graph.get_tensor_by_name('loss_f/right_error_list:0')
+        训练op['loss'] = self._sess.graph.get_tensor_by_name('loss_f/loss_op:0')
+        训练op['对错二分'] = self._sess.graph.get_tensor_by_name('acc_f/right_error_list:0')
+        训练op['acc'] = self._sess.graph.get_tensor_by_name('acc_f/accuracy_op:0')
+        训练op['train'] = self._sess.graph.get_operation_by_name('train_op')
+        训练op['loss对错二分'] = self._sess.graph.get_tensor_by_name('loss_f/right_error_list:0')
         # 训练
         if self._可视化w and 记录过程:
             训练op['merged'] = self._sess.graph.get_tensor_by_name('merged_op/merged_op:0')
@@ -592,7 +599,8 @@ class 耦合嵌入_tf模型:
         }
         return 输出
 
-    def getTextEmbedding(self, frontPartText_L, backPartText_L, frontPartTextLen_L, backPartTextLen_L, batch_size, l2_normalize):
+    def getTextEmbedding(self, frontPartText_L, backPartText_L, frontPartTextLen_L, backPartTextLen_L, batch_size,
+                         l2_normalize):
         '''
         无论参数是否共享, 这里都将使用正例那边的模型
         如果不使用词向量, 词序号必须是词向量!
@@ -607,8 +615,8 @@ class 耦合嵌入_tf模型:
         assert self._模型参数d['haveTrainingSteps'] >= 0, '还未初始化模型!'
         assert len(frontPartText_L) == len(backPartText_L) == len(frontPartTextLen_L) == len(backPartTextLen_L), '长度不一致'
         # 最大长度
-        title_maxlen=self._模型参数d['title_maxlen']
-        abstract_maxlen=self._模型参数d['abstract_maxlen']
+        title_maxlen = self._模型参数d['title_maxlen']
+        abstract_maxlen = self._模型参数d['abstract_maxlen']
         # 操作
         向量op = {}
         if l2_normalize:
@@ -635,7 +643,8 @@ class 耦合嵌入_tf模型:
                                     feed_dict={'title_p:0': batch_f, 'abstract_p:0': batch_b,
                                                'title_n:0': batch_空_f, 'abstract_n:0': batch_空_b,
                                                'title_len_p:0': batch_f_len, 'abstract_len_p:0': batch_b_len,
-                                               'title_len_n:0': np.zeros([0], np.int32), 'abstract_len_n:0': np.zeros([0], np.int32),
+                                               'title_len_n:0': np.zeros([0], np.int32),
+                                               'abstract_len_n:0': np.zeros([0], np.int32),
                                                'isTrain:0': False})
                 embeddingFront_L += list(向量['frontText_vec'])
                 embeddingBack_L += list(向量['backText_vec'])
@@ -653,7 +662,7 @@ class 耦合嵌入_tf模型:
             embeddingBack_L = list(向量['backText_vec'])
         return embeddingFront_L, embeddingBack_L
 
-    def saveModel(self,address,save_step=False,max_to_keep=5):
+    def saveModel(self, address, save_step=False, max_to_keep=5):
         '''
         新建了Saver就不再用这个地址新建Saver, 定时保存模型会和 _词_序号d, _模型参数d 错位
         :param address: str
@@ -662,21 +671,21 @@ class 耦合嵌入_tf模型:
         :return:
         '''
         assert self._模型参数d['haveTrainingSteps'] >= 0, '还未初始化模型!'
-        新建了Saver=False
+        新建了Saver = False
         if address in self._保存模型地址_saver表:
-            saver=self._保存模型地址_saver表[address]
+            saver = self._保存模型地址_saver表[address]
         else:
             with self._sess.graph.as_default():
                 saver = tf.train.Saver(max_to_keep=max_to_keep)
-                新建了Saver=True
+                新建了Saver = True
         global_step = self._模型参数d['haveTrainingSteps'] if save_step else None
         saver.save(self._sess, address, global_step=global_step, write_meta_graph=True)
         # 保存其他参数
-        global_step = '-'+str(global_step) if global_step else ''
-        with open((address+global_step+'.parms').encode('utf-8'),'w',encoding='utf-8') as w:
+        global_step = '-' + str(global_step) if global_step else ''
+        with open((address + global_step + '.parms').encode('utf-8'), 'w', encoding='utf-8') as w:
             w.write(str(self._模型参数d))
         # 保存词表
-        with open((address+global_step+'.w_num_map').encode('utf-8'),'wb') as w:
+        with open((address + global_step + '.w_num_map').encode('utf-8'), 'wb') as w:
             w.write(pickle.dumps(self._词_序号d))
         return 新建了Saver
 
@@ -699,23 +708,36 @@ class 耦合嵌入_tf模型:
 class IRdataSet:
     def __init__(self, 数据集地址, 句子清洗=句子清洗, paperID_probL_idL_L地址=None, 分割位置=None, 句矩阵地址=None):
         self._句子清洗 = 句子清洗
-        with open(paperID_probL_idL_L地址.encode('utf-8'), 'rb') as r:
-            print('读取相似概率矩阵 paperID_probL_idL_L ...')
-            self._paperID_probL_noL_L = pickle.load(r)  # [(paperID,[prob,..],[no,..]),..]
         self._trainText1_L, self._trainText2_L, self._trainID_D, self._testText1_L, self._testText2_L, self._testID_L, \
-        self._candidateText1_L, self._candidateText2_L, self._candidateID_L, self._allWords_S = self._getTextInfor(数据集地址, 分割位置)
+        self._candidateText1_L, self._candidateText2_L, self._candidateID_L, self._allWords_S = self._getTextInfor(
+            数据集地址, 分割位置)
         self._trainID_L = [i for i, _ in sorted(self._trainID_D.items(), key=lambda t: t[1])]
         self._分割位置 = 分割位置
+        if paperID_probL_idL_L地址 is None:
+            # 用于构建训练集只需要格式: [(paperID,),..]
+            # 只用于提取数据(使用平均概率==True or 使用训练集筛选==0, 兼容getTrainSet)只需要格式: [(paperID,[],[]),..]
+            # 不使用不平衡数据处理方法只需要格式（weights==[]不会执行随机提取所以没问题）：[(paperID,[],[]),..]
+            # 训练集和测试集论文重复应该没事, 这个矩阵只用来构建训练集, 重复的就多训练一次
+            self._paperID_probL_noL_L = [(i, [], []) for i in self._trainID_L + self._testID_L]
+        else:
+            with open(paperID_probL_idL_L地址.encode('utf-8'), 'rb') as r:
+                print('读取相似概率矩阵 paperID_probL_idL_L ...')
+                self._paperID_probL_noL_L = pickle.load(r)  # [(paperID,[prob,..],[no,..]),..]
         if 句矩阵地址:
             print('句向量存储地址: %s' % 句矩阵地址)
-            self._senID_mat_len_seg_mid_h5, self._senID_no_D, self._senMaxLen, self._word_dim, self._senFrontMaxLen, self._senBackMaxLen = self._readSenVectors(句矩阵地址)
+            self._senID_mat_len_seg_mid_h5, self._senID_no_D, self._senMaxLen, self._word_dim, self._senFrontMaxLen, self._senBackMaxLen = self._readSenVectors(
+                句矩阵地址)
             print('句矩阵信息= 句子数:%d, 总长度:%d, 词dim:%d, f长度:%d, b长度:%d' %
                   (len(self._senID_no_D), self._senMaxLen, self._word_dim, self._senFrontMaxLen, self._senBackMaxLen))
         else:
             self._senID_mat_len_seg_mid_h5 = None
-        print('训练集文本数:%d, 测试集文本数:%d, 候选集文本数:%d' % (len(self._paperID_probL_noL_L), len(self._testID_L), len(self._candidateID_L)))
+        print('训练集文本数:%d, 测试集文本数:%d, 候选集文本数:%d' % (
+            len(self._paperID_probL_noL_L), len(self._testID_L), len(self._candidateID_L)))
 
     def getSenMatrix(self, textID_L, all0_front1_back2=0, senFrontLen=None, senBackLen=None):
+        """
+        获取每个文本的前后部分句子的向量矩阵, 以及句子的长度向量
+        """
         assert self._senID_mat_len_seg_mid_h5, '没有句向量矩阵!'
         if not senFrontLen:
             senFrontLen = self._senFrontMaxLen
@@ -755,7 +777,7 @@ class IRdataSet:
             if self._分割位置 and 0 < self._分割位置 < 1:
                 seg = int(len(segPos) * self._分割位置)
                 seg = min(1, seg)  # 不能从0开始
-                seg = max(seg, len(segPos)-1)  # 不能从最后开始
+                seg = max(seg, len(segPos) - 1)  # 不能从最后开始
                 seg = segPos[seg]
                 senFrontMartix_L.append(matrix[: seg])
                 senBackMartix_L.append(matrix[seg: length])
@@ -768,8 +790,10 @@ class IRdataSet:
             senFrontLen_L.append(len(senFrontMartix_L[-1]))
             senBackLen_L.append(len(senBackMartix_L[-1]))
             # 补0
-            senFrontMartix_L[-1] = np.concatenate([senFrontMartix_L[-1], np.zeros((senFrontLen - senFrontLen_L[-1], self._word_dim))], axis=0)
-            senBackMartix_L[-1] = np.concatenate([senBackMartix_L[-1], np.zeros((senBackLen - senBackLen_L[-1], self._word_dim))], axis=0)
+            senFrontMartix_L[-1] = np.concatenate(
+                [senFrontMartix_L[-1], np.zeros((senFrontLen - senFrontLen_L[-1], self._word_dim))], axis=0)
+            senBackMartix_L[-1] = np.concatenate(
+                [senBackMartix_L[-1], np.zeros((senBackLen - senBackLen_L[-1], self._word_dim))], axis=0)
         if all0_front1_back2 == 0:
             return senFrontMartix_L, senFrontLen_L, senBackMartix_L, senBackLen_L
         elif all0_front1_back2 == 1:
@@ -779,7 +803,8 @@ class IRdataSet:
 
     @staticmethod
     def _readSenVectors(senMatrixPath):
-        senID_mat_len_seg_mid_h5 = h5py.File(senMatrixPath.encode('utf-8'), 'r')  # senID, matrix, length, segPos, mid, senFrontMaxLen, senBackMaxLen
+        senID_mat_len_seg_mid_h5 = h5py.File(senMatrixPath.encode('utf-8'),
+                                             'r')  # senID, matrix, length, segPos, mid, senFrontMaxLen, senBackMaxLen
         senID_no_D = {j: i for i, j in enumerate(senID_mat_len_seg_mid_h5['senID'])}
         senMaxLen = senID_mat_len_seg_mid_h5['matrix'].shape[1]
         word_dim = senID_mat_len_seg_mid_h5['matrix'].shape[2]
@@ -790,8 +815,8 @@ class IRdataSet:
     def _getTextInfor(self, 数据集地址, 分割位置=None):
         trainID_D = {j[0]: i for i, j in enumerate(self._paperID_probL_noL_L)}  # 编号和位置一一对应
         testID_S = set()
-        trainText1_L = ['']*len(trainID_D)  # [[词,..],..]
-        trainText2_L = ['']*len(trainID_D)  # [[词,..],..]
+        trainText1_L = [''] * len(trainID_D)  # [[词,..],..]
+        trainText2_L = [''] * len(trainID_D)  # [[词,..],..]
         testText1_L = []  # [[词,..],..]
         testText2_L = []  # [[词,..],..]
         testID_L = []  # [文本编号,..]
@@ -813,7 +838,7 @@ class IRdataSet:
                 line = line.strip().split('\t')
                 if 分割位置 and 0 < 分割位置 < 1:
                     text = self._句子清洗(line[1] + ' ' + line[2]).split(' ')
-                    text1, text2 = text[:int(len(text)*分割位置)], text[int(len(text)*分割位置):]
+                    text1, text2 = text[:int(len(text) * 分割位置)], text[int(len(text) * 分割位置):]
                 else:
                     text1 = self._句子清洗(line[1]).split(' ')
                     text2 = self._句子清洗(line[2]).split(' ')
@@ -835,9 +860,9 @@ class IRdataSet:
                     candidatePos_L.append(pos)
                 allWords_S |= set(text1)
                 allWords_S |= set(text2)
-        candidatePos = sum(candidatePos_L)/len(candidatePos_L)
-        testPos = sum(testPos_L)/len(testPos_L)
-        allPos = sum(allPos_L)/len(allPos_L)
+        candidatePos = sum(candidatePos_L) / len(candidatePos_L)
+        testPos = sum(testPos_L) / len(testPos_L)
+        allPos = sum(allPos_L) / len(allPos_L)
         print('avg: candidatePos-%f, testPos-%f, allPos-%f' %
               (candidatePos, testPos, allPos))
         assert trainNum == len(trainID_D), '相似概率矩阵与数据集不对应!'
@@ -847,7 +872,7 @@ class IRdataSet:
     def _getTrainSet_singleProcess(args):
         paperID_probL_noL_L, textNum, 使用概率选择的概率, indexL, 使用平均概率 = args
         textID1n, textID2n = [], []
-        输出千分比 = 1
+        输出千分比 = 1  # 每输出千分之一输出一次进度
         for i, (_, probL, noL) in enumerate(paperID_probL_noL_L):
             permillage = int(i / len(paperID_probL_noL_L) * 1000)
             if permillage > 输出千分比:
@@ -866,7 +891,7 @@ class IRdataSet:
                         textID1n.append(np.random.choice(noL))
                     else:
                         textID1n.append(np.random.choice(noL, p=weights))
-                else:
+                else:  # 如果 weights==[] 自然执行这个
                     textID1n.append(np.random.choice(textNum))
                 textID2n.append(indexL + i)
             else:
@@ -884,7 +909,8 @@ class IRdataSet:
     def getTrainSet(self, 使用概率选择的概率=0., 进程数=1, 使用平均概率=False, 句向量模式=False):
         if 进程数 > 1:
             avgText = math.ceil(len(self._trainText1_L) / 进程数)
-            参数l = [(self._paperID_probL_noL_L[avgText * i: avgText * (i+1)], len(self._trainText1_L), 使用概率选择的概率, avgText * i, 使用平均概率) for i in range(进程数)]
+            参数l = [(self._paperID_probL_noL_L[avgText * i: avgText * (i + 1)], len(self._trainText1_L), 使用概率选择的概率,
+                    avgText * i, 使用平均概率) for i in range(进程数)]
             pool = Pool(进程数)
             textID1n_textID2n_L = pool.map(self._getTrainSet_singleProcess, 参数l)
             pool.close()
@@ -895,7 +921,8 @@ class IRdataSet:
                 textID1n += i
                 textID2n += j
         else:
-            textID1n, textID2n = self._getTrainSet_singleProcess((self._paperID_probL_noL_L, len(self._trainText1_L), 使用概率选择的概率, 0, 使用平均概率))
+            textID1n, textID2n = self._getTrainSet_singleProcess(
+                (self._paperID_probL_noL_L, len(self._trainText1_L), 使用概率选择的概率, 0, 使用平均概率))
 
         text1n, text2n = [], []
         if not 句向量模式:
@@ -940,7 +967,7 @@ class IRdataSet:
 
             candidate_sim_L = [(ID, sim) for ID, sim in zip(no_candidate_L, sim_L)]  # 构建相似度列表
             candidate_sim_L = heapq.nlargest(topK, candidate_sim_L, key=lambda t: t[1])  # 排序
-            testNo_no8candidate_L.append((i+index, candidate_sim_L))
+            testNo_no8candidate_L.append((i + index, candidate_sim_L))
         sys.stdout.write('\r')
         return testNo_no8candidate_L
 
@@ -953,15 +980,19 @@ class IRdataSet:
             标题_摘要cos矩阵xy = np.dot(ftVec_test, np.transpose(btVec_train))
             标题_摘要cos矩阵yx = np.dot(btVec_test, np.transpose(ftVec_train))
         else:
-            标题_摘要cos矩阵xy = np.dot(ftVec_test, np.transpose(btVec_train)) / np.dot(np.expand_dims(np.linalg.norm(ftVec_test, axis=1), axis=1), np.expand_dims(np.linalg.norm(btVec_train, axis=1), axis=0))
-            标题_摘要cos矩阵yx = np.dot(btVec_test, np.transpose(ftVec_train)) / np.dot(np.expand_dims(np.linalg.norm(btVec_test, axis=1), axis=1), np.expand_dims(np.linalg.norm(ftVec_train, axis=1), axis=0))
+            标题_摘要cos矩阵xy = np.dot(ftVec_test, np.transpose(btVec_train)) / np.dot(
+                np.expand_dims(np.linalg.norm(ftVec_test, axis=1), axis=1),
+                np.expand_dims(np.linalg.norm(btVec_train, axis=1), axis=0))
+            标题_摘要cos矩阵yx = np.dot(btVec_test, np.transpose(ftVec_train)) / np.dot(
+                np.expand_dims(np.linalg.norm(btVec_test, axis=1), axis=1),
+                np.expand_dims(np.linalg.norm(ftVec_train, axis=1), axis=0))
         testCandidateSimMatrix = np.array([标题_摘要cos矩阵xy, 标题_摘要cos矩阵yx]).sum(axis=0)
 
         # 根据矩阵获得排序好的预测结果
         test_candidate_D = {}  # {测试集论文编号:[候选集论文,..],..}
         if 进程数 > 1:
             avgText = math.ceil(len(testCandidateSimMatrix) / 进程数)
-            参数l = [(testCandidateSimMatrix[avgText * i: avgText * (i+1)], topK, avgText * i) for i in range(进程数)]
+            参数l = [(testCandidateSimMatrix[avgText * i: avgText * (i + 1)], topK, avgText * i) for i in range(进程数)]
             pool = Pool(进程数)
             testNo_no8candidate_L_L = pool.map(self._computeSimMatrix_singleProcess, 参数l)
             pool.close()
@@ -1018,8 +1049,12 @@ class TCdataSet(IRdataSet):
             标题_摘要cos矩阵xy = np.dot(ftVec_test, np.transpose(btVec_train))
             标题_摘要cos矩阵yx = np.dot(btVec_test, np.transpose(ftVec_train))
         else:
-            标题_摘要cos矩阵xy = np.dot(ftVec_test, np.transpose(btVec_train)) / np.dot(np.expand_dims(np.linalg.norm(ftVec_test, axis=1), axis=1), np.expand_dims(np.linalg.norm(btVec_train, axis=1), axis=0))
-            标题_摘要cos矩阵yx = np.dot(btVec_test, np.transpose(ftVec_train)) / np.dot(np.expand_dims(np.linalg.norm(btVec_test, axis=1), axis=1), np.expand_dims(np.linalg.norm(ftVec_train, axis=1), axis=0))
+            标题_摘要cos矩阵xy = np.dot(ftVec_test, np.transpose(btVec_train)) / np.dot(
+                np.expand_dims(np.linalg.norm(ftVec_test, axis=1), axis=1),
+                np.expand_dims(np.linalg.norm(btVec_train, axis=1), axis=0))
+            标题_摘要cos矩阵yx = np.dot(btVec_test, np.transpose(ftVec_train)) / np.dot(
+                np.expand_dims(np.linalg.norm(btVec_test, axis=1), axis=1),
+                np.expand_dims(np.linalg.norm(ftVec_train, axis=1), axis=0))
         testCandidateSimMatrix = np.array([标题_摘要cos矩阵xy, 标题_摘要cos矩阵yx]).sum(axis=0)
         test_train_dis_L = -testCandidateSimMatrix  # 相似度越高距离越小
 
@@ -1039,20 +1074,20 @@ def 运行():
     ap = 'data/IR arxiv/'
 
     # ------训练模型
-    模型地址 = ap+'av_model33/SPM'
+    模型地址 = ap + 'av_model33/SPM'
     batchSize = 200
-    进行多少批次 = 10**6
+    进行多少批次 = 10 ** 6
 
     # ------读取模型还是新建模型
     # 模型参数 = 模型地址  # 读取模型
     模型参数 = 模型参数d  # 新建模型
 
     # ------避免不平衡数据的技巧
-    使用训练集筛选 = 0.5  # 可能需要大量内存, 以一定概率
+    使用训练集筛选 = 0.5  # 可能需要大量内存, 使用tf-idf概率选择负例的概率, 使用平均概率=True会导致从当前进程中的论文中选择负例(类似与使用训练集筛选=0)
     使用训练集筛选_进程数 = 2
-    使用平均概率 = True
-    重复训练多少上一轮训练错误的数据 = int(batchSize*0.)
-    paperID_probL_idL_L地址 = ap+'ac_allTtoT100-paperID_probL_noL_L.pkl'
+    使用平均概率 = True  # 是否不使用tf-idf相似度作为概率选择负例, 使用训练集筛选>0才有效
+    重复训练多少上一轮训练错误的数据 = int(batchSize * 0.)
+    paperID_probL_idL_L地址 = ap + 'ac_allTtoT100-paperID_probL_noL_L.pkl'
 
     # ------句矩阵, 和词向量不同时用
     句矩阵文件夹 = r'F:\data\_large_tem_file\CTE/' + ap
@@ -1070,7 +1105,7 @@ def 运行():
     数据集模型 = IRdataSet
     # 数据集模型 = TCdataSet
     分割位置 = None
-    数据集地址 = ap+'dataset.text'
+    数据集地址 = ap + 'dataset.text'
     if 数据集模型 == IRdataSet:
         数据集 = 数据集模型(数据集地址=数据集地址, 句子清洗=句子清洗, paperID_probL_idL_L地址=paperID_probL_idL_L地址, 分割位置=分割位置, 句矩阵地址=句矩阵存储地址)
     else:
@@ -1137,7 +1172,7 @@ def 运行():
                 epoch += 1
                 batch = 0
 
-            for i in tqdm(range(多少批次测试一次模型-测试前进行批次数), '训练'):
+            for i in tqdm(range(多少批次测试一次模型 - 测试前进行批次数), '训练'):
                 if i != 0 and bitchNum % math.ceil(数据集.trainSetSize / batchSize) == 0:
                     break
                 if 总批次 % 多少批次记录一次 == 0:
@@ -1190,18 +1225,19 @@ def 运行():
             if 多少批次测试一次模型 <= 测试前进行批次数:
                 if 数据集模型 == IRdataSet:
                     print('目前最好结果 P: %.4f, R: %.4f (%d-epochs,%d-batch)' % (
-                    目前最好结果[0], 目前最好结果[1], 目前最好结果[2], 目前最好结果[3]))
+                        目前最好结果[0], 目前最好结果[1], 目前最好结果[2], 目前最好结果[3]))
                 else:
                     print('目前最好结果 acc: %.4f, error rate: %.4f (%d-epochs,%d-batch)' % (
-                    目前最好结果[0], 目前最好结果[1], 目前最好结果[2], 目前最好结果[3]))
+                        目前最好结果[0], 目前最好结果[1], 目前最好结果[2], 目前最好结果[3]))
                 # 准备测试
-                (frontTest_L, backTest_L), (frontCandidate_L, backCandidate_L) = 数据集.getTestSet(句向量模式=not model.get_parms()['使用词向量'])
+                (frontTest_L, backTest_L), (frontCandidate_L, backCandidate_L) = 数据集.getTestSet(
+                    句向量模式=not model.get_parms()['使用词向量'])
                 frontPartText_L = frontTest_L + frontCandidate_L  # 前面是测试集, 后面是候选集
                 backPartText_L = backTest_L + backCandidate_L
                 embeddingFrontPart_L, embeddingBackPart_L = [], []
                 for i in tqdm(range(0, len(frontPartText_L), batch_size_测试集), '测试'):
-                    frontText_L = frontPartText_L[i: i+batch_size_测试集]
-                    backText_L = backPartText_L[i: i+batch_size_测试集]
+                    frontText_L = frontPartText_L[i: i + batch_size_测试集]
+                    backText_L = backPartText_L[i: i + batch_size_测试集]
                     if model.get_parms()['使用词向量']:
                         多_句_词矩阵l, 多_长度l, _, _, _ = model.预_编号与填充_批量([frontText_L, backText_L], [1, 0], 加入新词=False)
                         frontText_L, backText_L = 多_句_词矩阵l

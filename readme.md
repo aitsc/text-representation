@@ -14,7 +14,6 @@
 
 ## 目前主要的在用文件
 
-- _aa_coupled embedding.py
 - _ab_arxiv data helper-IR.py
 - _ac_tf-idf.py
 - _ad_evaluate.py
@@ -33,7 +32,7 @@
 - _az_IMDB data helper-TC.py
 - _ba_AG data helper-TC.py
 - _bb_USPTO data helper-CR.py
-- _bc_deep methods.py
+- _bc_deep_methods.py
 - _bf_sentence embedding.py
-- _bg_skip thoughts.py
+- _bg_skip thoughts.py: 输出结果用于 bf
 
