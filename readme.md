@@ -36,3 +36,6 @@
 - _bf_sentence embedding.py
 - _bg_skip thoughts.py: 输出结果用于 bf
 
+## 环境配置
+- conda create -n tf1.12 python=3.6
+- 

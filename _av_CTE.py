@@ -708,21 +708,21 @@ class 耦合嵌入_tf模型:
 class IRdataSet:
     def __init__(self, 数据集地址, 句子清洗=句子清洗, paperID_probL_idL_L地址=None, 分割位置=None, 句矩阵地址=None):
         self._句子清洗 = 句子清洗
-        self._trainText1_L, self._trainText2_L, self._trainID_D, self._testText1_L, self._testText2_L, self._testID_L, \
-        self._candidateText1_L, self._candidateText2_L, self._candidateID_L, self._allWords_S = self._getTextInfor(
-            数据集地址, 分割位置)
-        self._trainID_L = [i for i, _ in sorted(self._trainID_D.items(), key=lambda t: t[1])]
-        self._分割位置 = 分割位置
         if paperID_probL_idL_L地址 is None:
             # 用于构建训练集只需要格式: [(paperID,),..]
             # 只用于提取数据(使用平均概率==True or 使用训练集筛选==0, 兼容getTrainSet)只需要格式: [(paperID,[],[]),..]
             # 不使用不平衡数据处理方法只需要格式（weights==[]不会执行随机提取所以没问题）：[(paperID,[],[]),..]
             # 训练集和测试集论文重复应该没事, 这个矩阵只用来构建训练集, 重复的就多训练一次
-            self._paperID_probL_noL_L = [(i, [], []) for i in self._trainID_L + self._testID_L]
+            self._paperID_probL_noL_L = []  # 在 self._getTextInfor 中赋值, 默认候选集和测试集一起
         else:
             with open(paperID_probL_idL_L地址.encode('utf-8'), 'rb') as r:
                 print('读取相似概率矩阵 paperID_probL_idL_L ...')
                 self._paperID_probL_noL_L = pickle.load(r)  # [(paperID,[prob,..],[no,..]),..]
+        self._trainText1_L, self._trainText2_L, self._trainID_D, self._testText1_L, self._testText2_L, self._testID_L, \
+        self._candidateText1_L, self._candidateText2_L, self._candidateID_L, self._allWords_S = self._getTextInfor(
+            数据集地址, 分割位置)
+        self._trainID_L = [i for i, _ in sorted(self._trainID_D.items(), key=lambda t: t[1])]
+        self._分割位置 = 分割位置
         if 句矩阵地址:
             print('句向量存储地址: %s' % 句矩阵地址)
             self._senID_mat_len_seg_mid_h5, self._senID_no_D, self._senMaxLen, self._word_dim, self._senFrontMaxLen, self._senBackMaxLen = self._readSenVectors(
@@ -813,7 +813,12 @@ class IRdataSet:
         return senID_mat_len_seg_mid_h5, senID_no_D, senMaxLen, word_dim, senFrontMaxLen, senBackMaxLen
 
     def _getTextInfor(self, 数据集地址, 分割位置=None):
-        trainID_D = {j[0]: i for i, j in enumerate(self._paperID_probL_noL_L)}  # 编号和位置一一对应
+        if self._paperID_probL_noL_L:
+            trainID_D = {j[0]: i for i, j in enumerate(self._paperID_probL_noL_L)}  # 编号和位置一一对应
+            paperID_probL_noL_L_is_empty = False
+        else:
+            trainID_D = {}  # {paperID:序号,..}
+            paperID_probL_noL_L_is_empty = True
         testID_S = set()
         trainText1_L = [''] * len(trainID_D)  # [[词,..],..]
         trainText2_L = [''] * len(trainID_D)  # [[词,..],..]
@@ -844,7 +849,12 @@ class IRdataSet:
                     text2 = self._句子清洗(line[2]).split(' ')
                 pos = len(text1) / (len(text1) + len(text2))
                 allPos_L.append(pos)
-                if line[0] in trainID_D:
+                if paperID_probL_noL_L_is_empty:
+                    trainID_D[line[0]] = len(trainID_D)
+                    self._paperID_probL_noL_L.append((line[0], [], []))
+                    trainText1_L.append(text1)
+                    trainText2_L.append(text2)
+                elif line[0] in trainID_D:
                     trainText1_L[trainID_D[line[0]]] = text1
                     trainText2_L[trainID_D[line[0]]] = text2
                     trainNum += 1
@@ -1079,8 +1089,12 @@ def 运行():
     进行多少批次 = 10 ** 6
 
     # ------读取模型还是新建模型
-    # 模型参数 = 模型地址  # 读取模型
-    模型参数 = 模型参数d  # 新建模型
+    if os.path.exists(模型地址 + '.parms'):
+        print('读取模型')
+        模型参数 = 模型地址  # 读取模型
+    else:
+        print('新建模型')
+        模型参数 = 模型参数d  # 新建模型
 
     # ------避免不平衡数据的技巧
     使用训练集筛选 = 0.5  # 可能需要大量内存, 使用tf-idf概率选择负例的概率, 使用平均概率=True会导致从当前进程中的论文中选择负例(类似与使用训练集筛选=0)
@@ -1112,12 +1126,15 @@ def 运行():
         数据集 = 数据集模型(数据集地址=数据集地址, 句子清洗=句子清洗, paperID_probL_idL_L地址=paperID_probL_idL_L地址, 分割位置=分割位置, 句矩阵地址=句矩阵存储地址)
 
     # ------词向量
-    获取前多少个词向量 = 200000
-    词向量地址 = 'data/all arxiv/ak_Corpus_vectors.text'
-    # 词向量地址 = 'data/CR dblp/ak_doc2vecc_wvs.text'
-    # 词向量地址 = 'data/TC IMDB/ak_glove-Corpus_vectors.text'
-    词_向量l = 数据集.getWordEmbedding(词向量地址=词向量地址, 前多少个=获取前多少个词向量)['vec']
-    # 词_向量l = None  # 可用于随机词向量. 不使用词向量还需要考虑"模型参数d"中的"固定词向量"
+    if isinstance(模型参数, dict):
+        获取前多少个词向量 = 200000
+        词向量地址 = 'data/all arxiv/ak_Corpus_vectors.text'
+        # 词向量地址 = 'data/CR dblp/ak_doc2vecc_wvs.text'
+        # 词向量地址 = 'data/TC IMDB/ak_glove-Corpus_vectors.text'
+        词_向量l = 数据集.getWordEmbedding(词向量地址=词向量地址, 前多少个=获取前多少个词向量)['vec']
+        # 词_向量l = None  # 可用于随机词向量. 不使用词向量还需要考虑"模型参数d"中的"固定词向量"
+    else:
+        词_向量l = None
 
     # ------评估情况
     预测进程数 = 8
