@@ -20,4 +20,6 @@
 checkpoint
 *.DS_Store
 ._*
+!requirements.txt
+!stopwords.text
 

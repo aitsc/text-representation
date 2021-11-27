@@ -1,0 +1,13 @@
+# python=3.6
+# 先手动安装
+# pip install allennlp==0.4.3
+# 然后安装(防止torch和allennlp冲突) pip install -r requirements.txt
+tensorflow-gpu==1.12
+https://download.pytorch.org/whl/cu90/torch-1.1.0-cp36-cp36m-linux_x86_64.whl
+https://download.pytorch.org/whl/cu90/torchvision-0.3.0-cp36-cp36m-manylinux1_x86_64.whl
+pytorch-transformers==1.0.0
+tqdm==4.62.3
+h5py==3.1.0
+numpy==1.19.5
+overrides==3.1.0
+scikit-learn==0.19.2
