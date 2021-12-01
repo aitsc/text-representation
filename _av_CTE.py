@@ -360,11 +360,29 @@ class 耦合嵌入_tf模型:
                 pooled = []
                 for filter_size in filter_sizes:
                     filter_shape = [filter_size, embedding_dim, 1, num_filters]
+
+                    # test：从文件读取固定参数检验模型参数问题
+                    # if filter_size in {1}:
+                    #     print(可视化)
+                    #     if 可视化:  # tf 中首次命名出现的参数会保留，而不像torch后初始化的保留
+                    #         a = np.swapaxes(np.expand_dims(np.load('../text_representation2/aa_w_f.npy'), -1), 0, -1)
+                    #     else:
+                    #         a = np.swapaxes(np.expand_dims(np.load('../text_representation2/aa_w_l.npy'), -1), 0, -1)
+                    #     w = tf.get_variable(initializer=a, name='CNN_cell%dfs_w' % filter_size)
+                    # else:
+                    #     w = tf.get_variable(initializer=tf.constant(0.1, shape=filter_shape),
+                    #                         name='CNN_cell%dfs_w' % filter_size)
+                    # test：用于固定参数检验输出结果
+                    # a = tf.constant(0.1, shape=filter_shape)
+                    # w = tf.get_variable(initializer=a, name='CNN_cell%dfs_w' % filter_size)
+                    # w = tf.get_variable(initializer=a * tf.reshape(tf.linspace(-1., 1., embedding_dim), [1, -1, 1, 1]),
+                    #                     name='CNN_cell%dfs_w' % filter_size)
+
                     # 权重
                     w = tf.get_variable(initializer=tf.truncated_normal(filter_shape, stddev=0.1),
-                                        name='CNN_cell%dfs_b' % filter_size)
-                    b = tf.get_variable(initializer=tf.constant(0.1, shape=[num_filters]),
                                         name='CNN_cell%dfs_w' % filter_size)
+                    b = tf.get_variable(initializer=tf.constant(0.1, shape=[num_filters]),
+                                        name='CNN_cell%dfs_b' % filter_size)
                     输出['CNN_cell%dfs_w' % filter_size] = w
                     输出['CNN_cell%dfs_b' % filter_size] = b
                     # 卷积
@@ -660,6 +678,9 @@ class 耦合嵌入_tf模型:
                                            'isTrain:0': False})
             embeddingFront_L = list(向量['frontText_vec'])
             embeddingBack_L = list(向量['backText_vec'])
+        # test：输出向量
+        # print(np.array(embeddingFront_L))
+        # print(np.array(embeddingBack_L))
         return embeddingFront_L, embeddingBack_L
 
     def saveModel(self, address, save_step=False, max_to_keep=5):
@@ -697,6 +718,14 @@ class 耦合嵌入_tf模型:
         self._sess.close()
         if self._可视化w:
             self._可视化w.close()
+
+    def get_w_embed(self):
+        if not self._模型参数d['使用词向量']:
+            return
+        w_embed = self._sess.graph.get_tensor_by_name('w_embed:0')
+        w_embed = self._sess.run(w_embed)
+        np.save('av_w_embed.npy', w_embed)
+        print('w_embed.shape:', w_embed.shape)
 
     def __enter__(self):
         return self
@@ -1086,7 +1115,8 @@ def 运行():
     # ------训练模型
     模型地址 = ap + 'av_model33/SPM'
     batchSize = 200
-    进行多少批次 = 210
+    进行多少批次 = 10 ** 6
+    保存模型 = False
 
     # ------读取模型还是新建模型
     if os.path.exists(模型地址 + '.parms'):
@@ -1158,6 +1188,7 @@ def 运行():
     参数文件_obj = 参数文件('av_para.text', {'多少批次测试一次模型': 多少批次测试一次模型})
     模型参数d['句矩阵词dim'] = DeepMethods.model.getWordDim(嵌入类型)
     with 耦合嵌入_tf模型(模型参数=模型参数, 初始词向量l=词_向量l, 可视化地址=模型地址, 取消可视化=取消可视化) as model:
+        model.get_w_embed()
         if not model.get_parms()['使用词向量']:
             print(嵌入类型 + '...')
         title_maxlen, abstract_maxlen = model.get_parms()['title_maxlen'], model.get_parms()['abstract_maxlen']
@@ -1264,6 +1295,9 @@ def 运行():
                                                                                                   all0_front1_back2=0,
                                                                                                   senFrontLen=title_maxlen,
                                                                                                   senBackLen=abstract_maxlen)
+                    # test：检查输入的向量
+                    # print('frontText_L:', np.array(frontText_L))
+                    # print('backText_L:', np.array(backText_L))
                     # 开始测试
                     embeddingFront_L, embeddingBack_L = model.getTextEmbedding(frontText_L, backText_L,
                                                                                frontTextLen_L, backTextLen_L,
@@ -1296,8 +1330,9 @@ def 运行():
                     目前最好结果[2] = epoch
                     目前最好结果[3] = 总批次
                     model.get_parms()['bastMacro-P'] = 目前最好结果[0]
-                    model.saveModel(模型地址)
-                    print('保存了一次模型: %d step' % 总批次)
+                    if 保存模型:
+                        model.saveModel(模型地址)
+                        print('保存了一次模型: %d step' % 总批次)
                 # 修改 默认多少批次测试一次模型
                 测试前进行批次数 = 0
                 x = 参数文件_obj.para['多少批次测试一次模型']
