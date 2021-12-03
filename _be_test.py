@@ -53,5 +53,5 @@ class 比较不同h5py:
 if __name__ == '__main__':
     比较不同h5py_obj = 比较不同h5py(oldH5=r"F:\data\_large_tem_file\CTE\data\CR dblp\av_xlnet-large-cased_sen_mat_len.h5",
                             newH5=r"F:\data\_large_tem_file\CTE\data\CR dblp\bc_xlnet-large-cased_senID_mat_len_seg_mid.h5",
-                            datasetPath=r'D:\data\code\python\paper\text representation\data\CR dblp\dataset.text')
+                            datasetPath=r'D:\data\code\python\paper\text-representation\data\CR dblp\dataset.text')
     比较不同h5py_obj.get一个向量()

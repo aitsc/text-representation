@@ -112,7 +112,7 @@ with torch.no_grad():
 #     print(hidden_states.shape)
 
 # print('ELMo')  # 掩码部分向量自动充0
-# pretrained_model = r'D:\data\code\python\paper\text representation\data\-elmo-model\elmo_2x4096_512_2048cnn_2xhighway_5.5B_'
+# pretrained_model = r'D:\data\code\python\paper\text-representation\data\-elmo-model\elmo_2x4096_512_2048cnn_2xhighway_5.5B_'
 # model = ElmoEmbedder(pretrained_model + 'options.json', pretrained_model + 'weights.hdf5', cuda_device=-1)
 # elmo_embedding, _ = model.batch_to_embeddings([list(a), list(a)])
 # # 句向量 = np.sum(np.array(elmo_embedding), axis=1) / elmo_embedding.shape[1]

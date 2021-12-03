@@ -4,21 +4,21 @@ import os
 def word2vec():
     os.system(
         'time /home/tansc/c/word2vec/word2vec '
-        '-train "/home/tansc/python/paper/text representation/data/TC AGnews/aj_dataset corpus.text" '
-        '-output "/home/tansc/python/paper/text representation/data/TC AGnews/ak_Corpus_vectors.text" '
+        '-train "/home/tansc/python/paper/text-representation/data/TC AGnews/aj_dataset corpus.text" '
+        '-output "/home/tansc/python/paper/text-representation/data/TC AGnews/ak_Corpus_vectors.text" '
         '-cbow 0 -size 100 -window 10 -negative 5 -hs 1 '
         '-sample 1e-4 -threads 62 -binary 0 -iter 100 -min-count 1  '
-        '-save-vocab "/home/tansc/python/paper/text representation/data/TC AGnews/ak_Corpus_word.text"'
+        '-save-vocab "/home/tansc/python/paper/text-representation/data/TC AGnews/ak_Corpus_word.text"'
     )
 
 
 def glove():
-    CORPUS = '"/home/tansc/python/paper/text representation/data/TC AGnews/aj_dataset corpus.text"'
-    VOCAB_FILE = '"/home/tansc/python/paper/text representation/data/TC AGnews/ak_glove-Corpus_word.text"'
+    CORPUS = '"/home/tansc/python/paper/text-representation/data/TC AGnews/aj_dataset corpus.text"'
+    VOCAB_FILE = '"/home/tansc/python/paper/text-representation/data/TC AGnews/ak_glove-Corpus_word.text"'
     COOCCURRENCE_FILE = '"cooccurrence.bin"'
     COOCCURRENCE_SHUF_FILE = '"cooccurrence.shuf.bin"'
     BUILDDIR = '"/home/tansc/c/GloVe-master/build"'
-    SAVE_FILE = '"/home/tansc/python/paper/text representation/data/TC AGnews/ak_glove-Corpus_vectors.text"'  # 结束后修改.txt后缀
+    SAVE_FILE = '"/home/tansc/python/paper/text-representation/data/TC AGnews/ak_glove-Corpus_vectors.text"'  # 结束后修改.txt后缀
     VERBOSE = '2'
     MEMORY = '32.0'  # 占用内存的软限制，单位GB
     VOCAB_MIN_COUNT = '1'
@@ -51,8 +51,8 @@ def glove():
 
 
 def doc2vecc():
-    train = '/home/tansc/python/paper/text representation/data/CR dblp/ak_doc2vecc-shuf.text'
-    test = '/home/tansc/python/paper/text representation/data/CR dblp/aj_dataset corpus.text'
+    train = '/home/tansc/python/paper/text-representation/data/CR dblp/ak_doc2vecc-shuf.text'
+    test = '/home/tansc/python/paper/text-representation/data/CR dblp/aj_dataset corpus.text'
 
     # print('.' * 30 + '编译')
     # os.system('gcc /home/tansc/c/doc2vecc/doc2vecc.c -o /home/tansc/c/doc2vecc/doc2vecc -lm -pthread -O3 -march=native -funroll-loops')
@@ -62,13 +62,13 @@ def doc2vecc():
     os.system(
         'time /home/tansc/c/doc2vecc/doc2vecc '
         '-train "%s" ' % train +
-        '-word "/home/tansc/python/paper/text representation/data/CR dblp/ak_doc2vecc_wvs.text" '
-        '-output "/home/tansc/python/paper/text representation/data/CR dblp/ak_doc2vecc_dvs.text" '
+        '-word "/home/tansc/python/paper/text-representation/data/CR dblp/ak_doc2vecc_wvs.text" '
+        '-output "/home/tansc/python/paper/text-representation/data/CR dblp/ak_doc2vecc_dvs.text" '
         '-cbow 0 -size 100 -window 10 -negative 5 -hs 1 '
         '-sample 1e-4 -threads 30 -binary 0 -iter 100 -min-count 1 '
         '-test "%s" ' % test +
         '-sentence-sample 0.1 '
-        '-save-vocab "/home/tansc/python/paper/text representation/data/CR dblp/ak_doc2vecc_words.text"'
+        '-save-vocab "/home/tansc/python/paper/text-representation/data/CR dblp/ak_doc2vecc_words.text"'
     )
 
 
