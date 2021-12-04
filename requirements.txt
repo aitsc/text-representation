@@ -11,3 +11,4 @@ h5py==3.1.0
 numpy==1.19.5
 overrides==3.1.0
 scikit-learn==0.19.2
+tsc-auto>=0.7.1
