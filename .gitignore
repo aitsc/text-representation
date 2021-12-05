@@ -22,4 +22,5 @@ checkpoint
 ._*
 !requirements.txt
 !stopwords.text
+.idea/
 
