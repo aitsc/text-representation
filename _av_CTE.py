@@ -1,3 +1,5 @@
+from _bc_deep_methods import DeepMethods
+from _ad_evaluate import IR评估, TC评估
 import os
 import h5py
 from tqdm import tqdm
@@ -17,8 +19,6 @@ import logging
 
 logging.basicConfig(level=logging.ERROR)  # 阻止输出初始化句子过长的警告
 句子清洗 = importlib.import_module('_au_text preprocessing').句子清洗
-from _ad_evaluate import IR评估, TC评估
-from _bc_deep_methods import DeepMethods
 
 
 class 参数文件:
@@ -336,7 +336,8 @@ class 耦合嵌入_tf模型:
                         输出['outputs'] = outputs
             if 可视化:
                 for name, cell in 输出.items():
-                    if 'cell' not in name: continue
+                    if 'cell' not in name:
+                        continue
                     tf.summary.histogram(name + '-w', cell.weights[0])
                     tf.summary.histogram(name + '-b', cell.weights[1])
             return 输出
@@ -398,7 +399,8 @@ class 耦合嵌入_tf模型:
                 输出['outputs'] = pooled
             if 可视化:
                 for name, cell in 输出.items():
-                    if 'cell' not in name: continue
+                    if 'cell' not in name:
+                        continue
                     tf.summary.histogram(name, cell)
             return 输出
 
@@ -748,8 +750,8 @@ class IRdataSet:
                 print('读取相似概率矩阵 paperID_probL_idL_L ...')
                 self._paperID_probL_noL_L = pickle.load(r)  # [(paperID,[prob,..],[no,..]),..]
         self._trainText1_L, self._trainText2_L, self._trainID_D, self._testText1_L, self._testText2_L, self._testID_L, \
-        self._candidateText1_L, self._candidateText2_L, self._candidateID_L, self._allWords_S = self._getTextInfor(
-            数据集地址, 分割位置)
+            self._candidateText1_L, self._candidateText2_L, self._candidateID_L, self._allWords_S = self._getTextInfor(
+                数据集地址, 分割位置)
         self._trainID_L = [i for i, _ in sorted(self._trainID_D.items(), key=lambda t: t[1])]
         self._分割位置 = 分割位置
         if 句矩阵地址:
@@ -1114,7 +1116,7 @@ def 运行():
 
     # ------训练模型
     模型地址 = ap + 'av_model33/SPM'
-    batchSize = 100
+    batchSize = 200
     进行多少批次 = 10 ** 6
     保存模型 = False
 
@@ -1144,7 +1146,7 @@ def 运行():
     # 句矩阵存储地址 = 句矩阵文件夹 + 'bc_' + 嵌入类型 + '_senID_mat_len_seg_mid' + 分开训练 + '.h5'  # token embedding
     # 句矩阵存储地址 = 句矩阵文件夹 + 'bf_randomSent_senID_mat_len_seg_mid.h5'  # sentence embedding
     # 句矩阵存储地址 = 句矩阵文件夹 + 'bf_readSent-skip_senID_mat_len_seg_mid.h5'  # sentence embedding
-    # 句矩阵存储地址 = None
+    句矩阵存储地址 = None
 
     # ------数据集
     数据集模型 = IRdataSet
@@ -1358,7 +1360,7 @@ def 运行():
     '学习率最小值倍数': 100,
     'AdamOptimizer': 0.001,  # 用这个learning_rate和学习率衰减将无效, 非(0,1)则为不使用
 
-    '使用词向量': False,  # 决定是使用词向量还是句矩阵
+    '使用词向量': True,  # 决定是使用词向量还是句矩阵
     '固定词向量': True,  # 决定是否让词向量反向传播
     '词数上限': 200000,  # 不从零开始加一
     '词向量固定值初始化': None,  # 范围在[-1,0) (0,1], 其他值代表随机初始化
