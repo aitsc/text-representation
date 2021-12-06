@@ -1114,7 +1114,7 @@ def 运行():
 
     # ------训练模型
     模型地址 = ap + 'av_model33/SPM'
-    batchSize = 200
+    batchSize = 100
     进行多少批次 = 10 ** 6
     保存模型 = False
 
@@ -1127,7 +1127,7 @@ def 运行():
         模型参数 = 模型参数d  # 新建模型
 
     # ------避免不平衡数据的技巧
-    使用训练集筛选 = 0.5  # 可能需要大量内存, 使用tf-idf概率选择负例的概率, 使用平均概率=True会导致从当前进程中的论文中选择负例(类似与使用训练集筛选=0)
+    使用训练集筛选 = 0.  # 可能需要大量内存, 使用tf-idf概率选择负例的概率, 使用平均概率=True会导致从当前进程中的论文中选择负例(类似与使用训练集筛选=0)
     使用训练集筛选_进程数 = 2
     使用平均概率 = True  # 是否不使用tf-idf相似度作为概率选择负例, 使用训练集筛选>0才有效
     重复训练多少上一轮训练错误的数据 = int(batchSize * 0.)
@@ -1140,10 +1140,11 @@ def 运行():
         句矩阵文件夹 = ap
     嵌入类型 = DeepMethods.model.xlnet_large_cased
     分开训练 = '-'  # 如果有, 用于表示分开训练的词向量, 通常用 - 表示
+    句矩阵存储地址 = 句矩阵文件夹 + 'bc_xlnet-large-cased_senID_mat_len_seg_mid.h5'
     # 句矩阵存储地址 = 句矩阵文件夹 + 'bc_' + 嵌入类型 + '_senID_mat_len_seg_mid' + 分开训练 + '.h5'  # token embedding
     # 句矩阵存储地址 = 句矩阵文件夹 + 'bf_randomSent_senID_mat_len_seg_mid.h5'  # sentence embedding
     # 句矩阵存储地址 = 句矩阵文件夹 + 'bf_readSent-skip_senID_mat_len_seg_mid.h5'  # sentence embedding
-    句矩阵存储地址 = None
+    # 句矩阵存储地址 = None
 
     # ------数据集
     数据集模型 = IRdataSet
@@ -1156,7 +1157,7 @@ def 运行():
         数据集 = 数据集模型(数据集地址=数据集地址, 句子清洗=句子清洗, paperID_probL_idL_L地址=paperID_probL_idL_L地址, 分割位置=分割位置, 句矩阵地址=句矩阵存储地址)
 
     # ------词向量
-    if isinstance(模型参数, dict):
+    if isinstance(模型参数, dict) and 模型参数d['使用词向量']:
         获取前多少个词向量 = 200000
         词向量地址 = 'data/all arxiv/ak_Corpus_vectors.text'
         # 词向量地址 = 'data/CR dblp/ak_doc2vecc_wvs.text'
@@ -1357,7 +1358,7 @@ def 运行():
     '学习率最小值倍数': 100,
     'AdamOptimizer': 0.001,  # 用这个learning_rate和学习率衰减将无效, 非(0,1)则为不使用
 
-    '使用词向量': True,  # 决定是使用词向量还是句矩阵
+    '使用词向量': False,  # 决定是使用词向量还是句矩阵
     '固定词向量': True,  # 决定是否让词向量反向传播
     '词数上限': 200000,  # 不从零开始加一
     '词向量固定值初始化': None,  # 范围在[-1,0) (0,1], 其他值代表随机初始化
