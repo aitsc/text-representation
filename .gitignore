@@ -19,8 +19,10 @@
 *.tmp*
 checkpoint
 *.DS_Store
+*.pdf
 ._*
+.idea/
+.VSCodeCounter
+
 !requirements.txt
 !stopwords.text
-.idea/
-

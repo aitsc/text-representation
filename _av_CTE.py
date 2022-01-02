@@ -16,6 +16,7 @@ import math
 import importlib
 from pprint import pformat, pprint
 import logging
+from tanshicheng import Draw
 
 logging.basicConfig(level=logging.ERROR)  # 阻止输出初始化句子过长的警告
 句子清洗 = importlib.import_module('_au_text preprocessing').句子清洗
@@ -492,7 +493,7 @@ class 耦合嵌入_tf模型:
         如果 使用BERT, 将返回可变长度的 多_句_词矩阵l, 且不转为词序号
         :param 多_句_词变矩阵l: [[[词,..],..],..]
         :param isTitle向量: [bool,..]
-        :param 加入新词: bool
+        :param 加入新词: bool; 大于词矩阵容纳上限时为True也增加不了新词
         :return:
         '''
         all新词数, all新词s, all加入新词s = 0, set(), set()
@@ -885,6 +886,7 @@ class IRdataSet:
                     self._paperID_probL_noL_L.append((line[0], [], []))
                     trainText1_L.append(text1)
                     trainText2_L.append(text2)
+                    trainNum += 1
                 elif line[0] in trainID_D:
                     trainText1_L[trainID_D[line[0]]] = text1
                     trainText2_L[trainID_D[line[0]]] = text2
@@ -1012,7 +1014,8 @@ class IRdataSet:
         sys.stdout.write('\r')
         return testNo_no8candidate_L
 
-    def computeSimMatrixID(self, ftVec_test, btVec_test, ftVec_train, btVec_train, topK, l2_normalize=True, 进程数=1):
+    def computeSimMatrixID(self, ftVec_test, btVec_test, ftVec_train, btVec_train, topK, l2_normalize=True, 进程数=1,
+                           返回整体矩阵=False):
         sys.stdout.write('\r')
         print('computeSimMatrixID - 相似度计算...', end='')
         sys.stdout.flush()
@@ -1046,6 +1049,12 @@ class IRdataSet:
                 candidate_sim_L = [(ID, sim) for ID, sim in zip(self._candidateID_L, sim_L)]  # 构建相似度列表
                 candidate_sim_L = heapq.nlargest(topK, candidate_sim_L, key=lambda t: t[1])  # 排序
                 test_candidate_D[self._testID_L[i]] = [i for i, _ in candidate_sim_L]
+        if 返回整体矩阵:
+            return test_candidate_D, {
+                'testCandidateSimMatrix': testCandidateSimMatrix,
+                '标题_摘要cos矩阵xy': 标题_摘要cos矩阵xy,
+                '标题_摘要cos矩阵yx': 标题_摘要cos矩阵yx,
+            }
         return test_candidate_D
 
     def getWordEmbedding(self, 词向量地址, 前多少个):
@@ -1112,10 +1121,12 @@ class TCdataSet(IRdataSet):
 
 
 def 运行():
-    ap = 'data/IR arxiv/'
+    ap = 'data/IR arxiv/'  # 修改不同数据集的 word2vec (globe) 结果只需要修改 ap 和 词向量地址
+    ap = 'data/CR USPTO/'
+    ap = 'data/CR dblp/'
 
     # ------训练模型
-    模型地址 = ap + 'av_model33/SPM'
+    模型地址 = ap + 'av_model2/SPM'  # 参考 data/数据介绍.md 进行修改
     batchSize = 200
     进行多少批次 = 10 ** 6
     保存模型 = False
@@ -1134,19 +1145,20 @@ def 运行():
     使用平均概率 = True  # 是否不使用tf-idf相似度作为概率选择负例, 使用训练集筛选>0才有效
     重复训练多少上一轮训练错误的数据 = int(batchSize * 0.)
     paperID_probL_idL_L地址 = ap + 'ac_allTtoT100-paperID_probL_noL_L.pkl'
+    paperID_probL_idL_L地址 = None
 
     # ------句矩阵, 和词向量不同时用
     句矩阵文件夹 = r'F:\data\_large_tem_file\CTE/' + ap
     # 句矩阵文件夹 = r'C:\Users\tanshicheng\Downloads\_large_tem_file\CTE/' + ap
     if not os.path.exists(句矩阵文件夹):
         句矩阵文件夹 = ap
-    嵌入类型 = DeepMethods.model.xlnet_large_cased
+    嵌入类型 = DeepMethods.model.roberta_large
     分开训练 = '-'  # 如果有, 用于表示分开训练的词向量, 通常用 - 表示
-    句矩阵存储地址 = 句矩阵文件夹 + 'bc_xlnet-large-cased_senID_mat_len_seg_mid.h5'
+    句矩阵存储地址 = 句矩阵文件夹 + 'bc_roberta.large_senID_mat_len_seg_mid-.h5'
     # 句矩阵存储地址 = 句矩阵文件夹 + 'bc_' + 嵌入类型 + '_senID_mat_len_seg_mid' + 分开训练 + '.h5'  # token embedding
     # 句矩阵存储地址 = 句矩阵文件夹 + 'bf_randomSent_senID_mat_len_seg_mid.h5'  # sentence embedding
     # 句矩阵存储地址 = 句矩阵文件夹 + 'bf_readSent-skip_senID_mat_len_seg_mid.h5'  # sentence embedding
-    句矩阵存储地址 = None
+    句矩阵存储地址 = None  # 配合 模型参数d['使用词向量'] = True, 否则需要 False
 
     # ------数据集
     数据集模型 = IRdataSet
@@ -1162,7 +1174,9 @@ def 运行():
     if isinstance(模型参数, dict) and 模型参数d['使用词向量']:
         获取前多少个词向量 = 200000
         词向量地址 = 'data/all arxiv/ak_Corpus_vectors.text'
-        # 词向量地址 = 'data/CR dblp/ak_doc2vecc_wvs.text'
+        词向量地址 = 'data/all USPTO/ak_Corpus_vectors.text'
+        词向量地址 = 'data/all dblp/ak_Corpus_vectors.text'
+        # 词向量地址 = 'data/CR dblp/ak_doc2vecc_wvs.text'  # 非 globe
         # 词向量地址 = 'data/TC IMDB/ak_glove-Corpus_vectors.text'
         词_向量l = 数据集.getWordEmbedding(词向量地址=词向量地址, 前多少个=获取前多少个词向量)['vec']
         # 词_向量l = None  # 可用于随机词向量. 不使用词向量还需要考虑"模型参数d"中的"固定词向量"
@@ -1187,6 +1201,13 @@ def 运行():
     取消可视化 = True
     多少批次记录一次 = 10
     记录第一批次元数据 = True
+    距离可视化参数 = {  # 用于检索而不是分类
+        'interval_epochs': 1,  # 多少epoch保存一次
+        'results': [],  # 每次的结果: 测试集*候选集 矩阵 然后 摊平成向量
+        'x_axis': [],  # 显示在x轴上的名称
+        'max_ret': 5,  # 保存几次结果后进行可视化
+        'drawn': True,  # 是否已经绘制
+    }
 
     参数文件_obj = 参数文件('av_para.text', {'多少批次测试一次模型': 多少批次测试一次模型})
     模型参数d['句矩阵词dim'] = DeepMethods.model.getWordDim(嵌入类型)
@@ -1309,13 +1330,31 @@ def 运行():
                     embeddingBackPart_L += embeddingBack_L
                 # 评估
                 if 数据集模型 == IRdataSet:
-                    test_candidate_D = 数据集.computeSimMatrixID(ftVec_test=embeddingFrontPart_L[:len(frontTest_L)],
-                                                              btVec_test=embeddingBackPart_L[:len(frontTest_L)],
-                                                              ftVec_train=embeddingFrontPart_L[len(frontTest_L):],
-                                                              btVec_train=embeddingBackPart_L[len(frontTest_L):],
-                                                              topK=topN, l2_normalize=True, 进程数=预测进程数)
+                    # 是否绘制远离趋势,需要则不适用l2范数,而是余弦相似度
+                    if not 距离可视化参数['drawn'] and epoch % 距离可视化参数['interval_epochs'] == 0 and len(距离可视化参数['results']) < 距离可视化参数['max_ret']:
+                        l2_normalize = False
+                    else:
+                        l2_normalize = True
+                    test_candidate_D, 矩阵s = 数据集.computeSimMatrixID(
+                        ftVec_test=embeddingFrontPart_L[:len(frontTest_L)],
+                        btVec_test=embeddingBackPart_L[:len(frontTest_L)],
+                        ftVec_train=embeddingFrontPart_L[len(frontTest_L):],
+                        btVec_train=embeddingBackPart_L[len(frontTest_L):],
+                        topK=topN, l2_normalize=l2_normalize, 进程数=预测进程数, 返回整体矩阵=True)
                     输出 = 评估(test_candidate_D, topN=topN, 简化=True, 输出地址=None)
                     r_a, r_b = 输出['macro-P'], 输出['macro-R']
+                    # 远离趋势绘图
+                    if not l2_normalize:
+                        距离可视化参数['results'].append(矩阵s['标题_摘要cos矩阵yx'].ravel())  # 以后半截为辅助文档向量
+                        距离可视化参数['x_axis'].append(f'{epoch}\n%.4f' % r_a)  # 如果上来就测试,实际上epoch应该从0开始
+                    if not 距离可视化参数['drawn'] and len(距离可视化参数['results']) == 距离可视化参数['max_ret']:
+                        save_path = 'av_trend_chart.pdf'
+                        print('绘制远离趋势变化的图...', save_path)
+                        draw = Draw(length=5, width=5, r=1, c=1)
+                        draw.add_violin(距离可视化参数['results'], 距离可视化参数['x_axis'],
+                                        xlabel_name='Epoch\nPrecision', ylabel_name='Cosine similarity')
+                        draw.draw(save_path)
+                        距离可视化参数['drawn'] = True
                 else:
                     test_train_dis_L, trainLabel_L, testLabel_L = 数据集.计算分类数据集距离矩阵(
                         ftVec_test=embeddingFrontPart_L[:len(frontTest_L)],

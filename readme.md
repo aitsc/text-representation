@@ -1,3 +1,11 @@
+# 介绍
+
+
+# 运行
+1. 安装环境 (参考 requirements.txt)
+2. 下载 data 文件夹数据: 链接: https://pan.baidu.com/s/1EEJk0_P55Ov5ReXsmyVZPA 提取码: rkh0
+3. python _av_CTE.py
+
 ## 信息检索数据运行指南
 
 1. 数据处理（4个文件）：使用“...data helper-IR.py”获取3份数据，原始数据处理暂存文件、原始数据处理暂存文件的语料、构建的数据集，然后使用“_aj_get dataset corpus.py”获得 构建的数据集的语料
