@@ -1,12 +1,23 @@
-# 介绍
+# Introduction
+This code is the implementation of the paper "Coherence-Based Distributed Document Representation Learning for Scientific Documents".
 
+If you find this code useful, please cite the following paper:
+```
+@article{tan2022coherence,
+  title = {Coherence-Based Distributed Document Representation Learning for Scientific Documents},
+  author = {Tan, Shicheng and Zhao, Shu and Zhang, Yanping},
+  journal = {arXiv},
+  year = {2022},
+  type = {Journal Article}
+}
+```
 
-# 运行
-1. 安装环境 (参考 requirements.txt)
-2. 下载 data 文件夹数据: 链接: https://pan.baidu.com/s/1EEJk0_P55Ov5ReXsmyVZPA 提取码: rkh0
+# Run
+1. Installation environment (ref. requirements.txt)
+2. Download data: Link: https://pan.baidu.com/s/1EEJk0_P55Ov5ReXsmyVZPA Password: rkh0
 3. python _av_CTE.py
 
-## 信息检索数据运行指南
+# 信息检索数据运行指南
 
 1. 数据处理（4个文件）：使用“...data helper-IR.py”获取3份数据，原始数据处理暂存文件、原始数据处理暂存文件的语料、构建的数据集，然后使用“_aj_get dataset corpus.py”获得 构建的数据集的语料
 2. 词向量训练（4个文件）：使用“_ak_get word embedding.py”训练第一步的2个语料得到2个词表和2个词向量文件，glove需要去除后缀名“.txt”
@@ -17,33 +28,3 @@
 7. 运行“_at_BERT.py”2次得到2个结果，BERT-Large uncased、BERT-Large uncased(wwm)
 8. 运行“_at_ELMo.py”2次得到2个结果，ELMo-Original(5.5B)、ELMo-Original(5.5B,级联)
 9. 运行“_av_CET.py”13次得到13个结果，基于 random embedding 等13种基础词向量
-
-
-
-## 目前主要的在用文件
-
-- _ab_arxiv data helper-IR.py
-- _ac_tf-idf.py
-- _ad_evaluate.py
-- _ae_LDA.py
-- _ag_doc2vec.py
-- _ah_WMD.py
-- _ai_BM25.py
-- _aj_get dataset corpus.py
-- _ak_get word embedding.py
-- _al_em-avg.py
-- _an_LSI.py
-- _au_text preprocessing.py
-- _av_CTE.py
-- _aw_USPTO data helper-IR.py
-- _ax_dblp data helper-CR.py
-- _az_IMDB data helper-TC.py
-- _ba_AG data helper-TC.py
-- _bb_USPTO data helper-CR.py
-- _bc_deep_methods.py
-- _bf_sentence embedding.py
-- _bg_skip thoughts.py: 输出结果用于 bf
-
-## 环境配置
-- conda create -n tf1.12 python=3.6
-- 

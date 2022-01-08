@@ -1,4 +1,5 @@
-# python=3.6
+# conda create -n tr python=3.6
+# conda activate tr
 # 先手动安装
 # pip install allennlp==0.4.3
 # 然后安装(防止torch和allennlp冲突) pip install -r requirements.txt
