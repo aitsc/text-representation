@@ -1,16 +1,4 @@
-# Introduction
-This code is the implementation of the paper "Coherence-Based Distributed Document Representation Learning for Scientific Documents".
 
-If you find this code useful, please cite the following paper:
-```
-@article{tan2022coherence,
-  title = {Coherence-Based Distributed Document Representation Learning for Scientific Documents},
-  author = {Tan, Shicheng and Zhao, Shu and Zhang, Yanping},
-  journal = {arXiv},
-  year = {2022},
-  type = {Journal Article}
-}
-```
 
 # Run
 1. Installation environment (ref. requirements.txt)
