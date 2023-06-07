@@ -866,6 +866,8 @@ class IRdataSet:
         candidatePos_L = []
         testPos_L = []
         allPos_L = []
+        
+        self.ID_text1_text2_D = {}  # {ID:[句子文本1,句子文本2],..}
 
         with open(数据集地址.encode('utf-8'), 'r', encoding='utf-8') as r:
             for i, line in tqdm(enumerate(r), '读取检索数据集信息'):
@@ -873,6 +875,7 @@ class IRdataSet:
                     testID_S = set(eval(line.strip()))
                     continue
                 line = line.strip().split('\t')
+                self.ID_text1_text2_D[line[0]] = [line[1], line[2]]
                 if 分割位置 and 0 < 分割位置 < 1:
                     text = self._句子清洗(line[1] + ' ' + line[2]).split(' ')
                     text1, text2 = text[:int(len(text) * 分割位置)], text[int(len(text) * 分割位置):]
@@ -1123,7 +1126,7 @@ class TCdataSet(IRdataSet):
 def 运行():
     ap = 'data/IR arxiv/'  # 修改不同数据集的 word2vec (globe) 结果只需要修改 ap 和 词向量地址
     ap = 'data/CR USPTO/'
-    ap = 'data/CR dblp/'
+    # ap = 'data/CR dblp/'
 
     # ------训练模型
     模型地址 = ap + 'av_model2/SPM'  # 参考 data/数据介绍.md 进行修改
@@ -1191,11 +1194,14 @@ def 运行():
     batch_size_测试集 = 2 * batchSize
     if 数据集模型 == IRdataSet:  # ---IR评估
         topN = 20
-        评估 = IR评估(标签地址=数据集地址).评估
+        评估_class = IR评估(标签地址=数据集地址)
+        评估 = 评估_class.评估
     else:  # ---TC评估
         n_neighbors = 9
         # n_neighbors = [3, 6, 9, 12, 15, 18]
-        评估 = TC评估().距离矩阵评估
+        评估_class = TC评估()
+        评估 = 评估_class.距离矩阵评估
+    has_case_study = True  # False, True
 
     # ------记录情况
     取消可视化 = True
@@ -1375,6 +1381,15 @@ def 运行():
                     if 保存模型:
                         model.saveModel(模型地址)
                         print('保存了一次模型: %d step' % 总批次)
+                    if has_case_study:
+                        评估_class.case_study(
+                            预测标签=test_candidate_D, 
+                            ID_P_R=输出['ID_P_R'], 
+                            ID_text1_text2_D=数据集.ID_text1_text2_D, 
+                            topN=20, 
+                            output_path=模型地址 + '.case_study.json',
+                            first_sent='USPTO' in ap
+                        )
                 # 修改 默认多少批次测试一次模型
                 测试前进行批次数 = 0
                 x = 参数文件_obj.para['多少批次测试一次模型']

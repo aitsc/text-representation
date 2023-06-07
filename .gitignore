@@ -23,6 +23,9 @@ checkpoint
 ._*
 .idea/
 .VSCodeCounter
+trans.py
+*.query
+test_*
 
 !requirements*
 !stopwords.text

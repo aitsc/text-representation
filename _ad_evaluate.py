@@ -5,6 +5,9 @@ from sklearn.neighbors import KNeighborsClassifier as kNN
 from sklearn.metrics.pairwise import cosine_similarity
 import time
 import sys
+import copy
+from pprint import pprint
+import json
 
 
 class IR评估:
@@ -27,11 +30,11 @@ class IR评估:
 
     def 评估(self, 预测标签, topN=20, 简化=True, 输出地址=None, 输出控制台=True):
         '''
-        :param 预测标签:
-        :param topN:
-        :param 简化:
-        :param 输出地址:
-        :param 输出控制台:
+        :param 预测标签: {ID:[ID],..}
+        :param topN: int or list
+        :param 简化: bool
+        :param 输出地址: None or str
+        :param 输出控制台: bool
         :return:
         '''
         预测向量组l, 标签向量组l = [], []
@@ -114,7 +117,63 @@ class IR评估:
                         w.write('%.4f\t%.4f\n' % (top_P[-1], top_R[-1]))
                     else:
                         w.write('%s\t%s\n' % (str(top_P), str(top_R)))
-        return 输出
+        输出_ = copy.deepcopy(输出)
+        # 返回每个样例对应的指标结果
+        输出_.update({
+            'ID_P_R': list(zip(论文编号l, 
+                               np.squeeze(batch_top_P).tolist(), 
+                               np.squeeze(batch_top_R).tolist()
+                               )),
+        })
+        return 输出_
+    
+    def case_study(self, 预测标签, ID_P_R, ID_text1_text2_D, topN=3, output_path=None, first_sent=False):
+        """案例研究
+
+        Args:
+            预测标签 (dict): {ID:[ID],..}
+            ID_P_R (list): [[论文编号,准确率,召回率],..]
+            ID_text1_text2_D (_type_): {ID:[句子文本1,句子文本2],..}
+            topN (int, optional): 选取和平均准确率最接近的几个样例作为展示,保存在文件
+            output_path (str, optional): 案例保存路径
+            first_sent (bool): 是否只取首句, 主要用于提取USPTO的标题
+        """
+        first_sent_f = lambda t: t.split('. ', 1)[0] if first_sent else t
+        if first_sent:
+            print('first_sent=True')
+        avg_P = sum([i[1] for i in ID_P_R]) / len(ID_P_R)
+        ID_P_R__sort = sorted(ID_P_R, key=lambda t: abs(t[1]-avg_P))
+        output = []
+        for ID, P, R in ID_P_R__sort[:topN]:
+            预测ID_L = 预测标签[ID]
+            标记ID_L = self._编号_检索论文d[ID]
+            预测正确ID_L = [i for i in 预测ID_L if i in set(标记ID_L)]
+            预测错误ID_L = [i for i in 预测ID_L if i not in set(标记ID_L)]
+            没预测到的ID_L = [i for i in 标记ID_L if i not in set(预测ID_L)]
+            output.append({
+                'ID': ID,
+                '准确率': P,
+                '召回率': R,
+                '标题': first_sent_f(ID_text1_text2_D[ID][0]),
+                '预测正确结果': [first_sent_f(ID_text1_text2_D[i][0]) for i in 预测正确ID_L],
+                '预测错误结果': [first_sent_f(ID_text1_text2_D[i][0]) for i in 预测错误ID_L],
+                '没预测到的结果': [first_sent_f(ID_text1_text2_D[i][0]) for i in 没预测到的ID_L],
+            })
+        # pprint(output[:2], width=200)
+        if output_path:
+            try:
+                from trans import translator
+                for out in tqdm(output, 'case_study-翻译中'):
+                    out['标题'] = translator(out['标题']) + '\t' + out['标题']
+                    for name in ['预测正确结果', '预测错误结果', '没预测到的结果', ]:
+                        for i in range(len(out[name])):
+                            out[name][i] = translator(out[name][i]) + '\t' + out[name][i]
+            except:
+                ...
+            print('save case_study to ' + output_path)
+            with open(output_path, 'w', encoding='utf8') as w:
+                json.dump(output, w, ensure_ascii=False, indent=2)
+        return output
 
     @staticmethod
     def MAP_相关文档数为N(预测向量组l, 标签向量组l, N):
