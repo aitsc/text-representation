@@ -1,6 +1,7 @@
-# conda create -n tr python=3.6
-# conda activate tr
+# conda create -n 1_tr python=3.6
+# conda activate 1_tr
 # 先手动安装
+# pip install https://download.pytorch.org/whl/cu90/torch-0.3.1-cp36-cp36m-linux_x86_64.whl
 # pip install allennlp==0.4.3
 # 然后安装(防止torch和allennlp冲突) pip install -r requirements.txt
 tensorflow-gpu==1.12
@@ -14,3 +15,4 @@ overrides==3.1.0
 scikit-learn==0.19.2
 tsc-auto>=0.7.1
 tanshicheng>=0.3.24
+statsmodels
